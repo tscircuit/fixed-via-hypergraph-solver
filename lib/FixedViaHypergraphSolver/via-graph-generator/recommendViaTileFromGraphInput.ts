@@ -1,7 +1,7 @@
-import viaTile3Regions from "assets/ViaGraphSolver/via-tile-3-regions-baked.json"
-import defaultViaTile from "assets/ViaGraphSolver/via-tile-4-regions-baked.json"
-import viaTile5Regions from "assets/ViaGraphSolver/via-tile-5-regions-baked.json"
-import viaTile6Regions from "assets/ViaGraphSolver/via-tile-6-regions-baked.json"
+import viaTile3Regions from "assets/FixedViaHypergraphSolver/via-tile-3-regions-baked.json"
+import defaultViaTile from "assets/FixedViaHypergraphSolver/via-tile-4-regions-baked.json"
+import viaTile5Regions from "assets/FixedViaHypergraphSolver/via-tile-5-regions-baked.json"
+import viaTile6Regions from "assets/FixedViaHypergraphSolver/via-tile-6-regions-baked.json"
 import type { XYConnection } from "../../type"
 import type { ViaTile } from "../../type"
 

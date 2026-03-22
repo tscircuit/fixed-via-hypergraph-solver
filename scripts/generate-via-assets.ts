@@ -5,7 +5,12 @@ import { fileURLToPath } from "node:url"
 import { execFileSync } from "node:child_process"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
-const ASSETS_DIR = path.join(SCRIPT_DIR, "..", "assets", "ViaGraphSolver")
+const ASSETS_DIR = path.join(
+  SCRIPT_DIR,
+  "..",
+  "assets",
+  "FixedViaHypergraphSolver",
+)
 
 const SOURCE_TILES = [
   "3-via-regions.kicad_pcb",

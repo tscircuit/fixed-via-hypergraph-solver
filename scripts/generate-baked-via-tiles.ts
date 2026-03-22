@@ -6,10 +6,15 @@ import { fileURLToPath } from "node:url"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import { visualizeViaGraph } from "../lib/graph-utils/visualizeRegionPortGraph"
 import type { JPort, JRegion, ViaTile } from "../lib/type"
-import { generateConvexViaTopologyRegions } from "../lib/ViaGraphSolver/via-graph-generator/generateConvexViaTopologyRegions"
+import { generateConvexViaTopologyRegions } from "../lib/FixedViaHypergraphSolver/via-graph-generator/generateConvexViaTopologyRegions"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
-const ASSETS_DIR = path.join(SCRIPT_DIR, "..", "assets", "ViaGraphSolver")
+const ASSETS_DIR = path.join(
+  SCRIPT_DIR,
+  "..",
+  "assets",
+  "FixedViaHypergraphSolver",
+)
 const DEFAULT_INPUT_FILES = [
   "via-tile-3-regions.json",
   "via-tile-4-regions.json",

@@ -457,10 +457,10 @@ async function main() {
       ? outputArg
       : path.join(
           "assets",
-          "ViaGraphSolver",
+          "FixedViaHypergraphSolver",
           outputArg.endsWith(".json") ? outputArg : `${outputArg}.json`,
         )
-    : path.join("assets", "ViaGraphSolver", "via-tile.json")
+    : path.join("assets", "FixedViaHypergraphSolver", "via-tile.json")
 
   if (!inputPath) {
     console.error(

@@ -10,14 +10,14 @@ const DEFAULT_INPUT_PATH = path.join(
   SCRIPT_DIR,
   "..",
   "assets",
-  "ViaGraphSolver",
+  "FixedViaHypergraphSolver",
   "via-tile.json",
 )
 const DEFAULT_OUTPUT_PATH = path.join(
   SCRIPT_DIR,
   "..",
   "assets",
-  "ViaGraphSolver",
+  "FixedViaHypergraphSolver",
   "via-traces.svg",
 )
 

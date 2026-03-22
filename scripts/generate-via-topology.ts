@@ -6,21 +6,21 @@ import { fileURLToPath } from "node:url"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import { visualizeViaGraph } from "../lib/graph-utils/visualizeRegionPortGraph"
 import type { ViaTile } from "../lib/type"
-import { generateViaTopologyRegions } from "../lib/ViaGraphSolver/via-graph-generator/generateViaTopologyRegions"
+import { generateViaTopologyRegions } from "../lib/FixedViaHypergraphSolver/via-graph-generator/generateViaTopologyRegions"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const DEFAULT_INPUT_PATH = path.join(
   SCRIPT_DIR,
   "..",
   "assets",
-  "ViaGraphSolver",
+  "FixedViaHypergraphSolver",
   "via-tile.json",
 )
 const DEFAULT_OUTPUT_PATH = path.join(
   SCRIPT_DIR,
   "..",
   "assets",
-  "ViaGraphSolver",
+  "FixedViaHypergraphSolver",
   "via-topology.svg",
 )
 

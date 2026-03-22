@@ -2,7 +2,7 @@ import type { GraphicsObject } from "graphics-debug"
 import type { JPort, JRegion, ViaGraph } from "../type"
 import { visualizeViaGraph } from "../graph-utils/visualizeRegionPortGraph"
 import type { Candidate } from "../type"
-import type { FixedViaHypergraphSolver } from "./ViaGraphSolver"
+import type { FixedViaHypergraphSolver } from "./FixedViaHypergraphSolver"
 
 const getConnectionColor = (connectionId: string, alpha = 0.8): string => {
   let hash = 0
@@ -26,7 +26,7 @@ const NET_COLOR_PALETTE = [
 const BOTTOM_LAYER_TRACE_COLOR = "rgba(52, 152, 219, 0.95)"
 const BOTTOM_LAYER_TRACE_DASH = "3 2"
 
-export const visualizeViaGraphSolver = (
+export const visualizeFixedViaHypergraphSolver = (
   solver: FixedViaHypergraphSolver,
 ): GraphicsObject => {
   const graph: ViaGraph = {

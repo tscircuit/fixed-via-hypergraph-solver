@@ -23,7 +23,7 @@ import {
   resolveSolvedRouteLineSegments,
   resolveSolvedRoutePoints,
 } from "./resolveSolvedRoutePoints"
-import { visualizeViaGraphSolver } from "./visualizeViaGraphSolver"
+import { visualizeFixedViaHypergraphSolver } from "./visualizeFixedViaHypergraphSolver"
 
 export type { RouteSegment, ViaByNet, ViaData, ViaTile } from "../type"
 
@@ -235,6 +235,6 @@ export class FixedViaHypergraphSolver extends HyperGraphSolver<JRegion, JPort> {
   override routeStartedHook(connection: Connection) {}
 
   override visualize(): GraphicsObject {
-    return visualizeViaGraphSolver(this)
+    return visualizeFixedViaHypergraphSolver(this)
   }
 }
