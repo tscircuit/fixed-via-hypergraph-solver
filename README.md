@@ -115,3 +115,30 @@ bun run build
 bun test
 bunx tsc --noEmit
 ```
+
+## Cosmos
+
+Start Cosmos locally:
+
+```bash
+bun run start
+```
+
+Config and starter fixtures:
+
+- `cosmos.config.json`
+- `fixtures/fixed-via-hypergraph-solver.fixture.tsx`
+
+## Dataset02 Benchmark
+
+Run benchmark on `lib/datasets/dataset02.json`:
+
+```bash
+bun run benchmark:dataset02
+```
+
+Quick smoke run:
+
+```bash
+bun run benchmark:dataset02:smoke
+```
