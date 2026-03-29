@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test"
 import {
   FixedViaHypergraphSolver,
-  createViaGraphWithConnections,
-  generateViaTopologyRegions,
+  createConvexViaGraphFromXYConnections,
 } from "../lib"
 import type { ViaTile } from "../lib/type"
 
@@ -40,28 +39,30 @@ test("FixedViaHypergraphSolver: solves a basic 3-connection perimeter case", () 
     tileHeight: 2.4,
   }
 
-  const baseGraph = generateViaTopologyRegions(viaTile, {
-    graphSize: 5,
-    idPrefix: "via",
-  })
-
-  const graphWithConnections = createViaGraphWithConnections(baseGraph, [
+  const graphWithConnections = createConvexViaGraphFromXYConnections(
+    [
+      {
+        start: { x: -2.5, y: 1.0 },
+        end: { x: 2.5, y: -1.0 },
+        connectionId: "A",
+      },
+      {
+        start: { x: 0, y: 2.5 },
+        end: { x: -2.5, y: -1.0 },
+        connectionId: "B",
+      },
+      {
+        start: { x: 0, y: -2.5 },
+        end: { x: 2.5, y: 1.0 },
+        connectionId: "C",
+      },
+    ],
+    viaTile,
     {
-      start: { x: -2.5, y: 1.0 },
-      end: { x: 2.5, y: -1.0 },
-      connectionId: "A",
+      tileWidth: viaTile.tileWidth,
+      tileHeight: viaTile.tileHeight,
     },
-    {
-      start: { x: 0, y: 2.5 },
-      end: { x: -2.5, y: -1.0 },
-      connectionId: "B",
-    },
-    {
-      start: { x: 0, y: -2.5 },
-      end: { x: 2.5, y: 1.0 },
-      connectionId: "C",
-    },
-  ])
+  )
 
   const solver = new FixedViaHypergraphSolver({
     inputGraph: {

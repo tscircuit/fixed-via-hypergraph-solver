@@ -35,8 +35,7 @@ bun add git+https://github.com/tscircuit/fixed-via-hypergraph-solver.git#1c48988
 ```ts
 import {
   FixedViaHypergraphSolver,
-  createViaGraphWithConnections,
-  generateViaTopologyRegions,
+  createConvexViaGraphFromXYConnections,
   type ViaTile,
 } from "@tscircuit/fixed-via-hypergraph-solver"
 
@@ -61,18 +60,13 @@ const viaTile: ViaTile = {
   tileHeight: 2.4,
 }
 
-const baseGraph = generateViaTopologyRegions(viaTile, {
-  graphSize: 5,
-  idPrefix: "via",
-})
-
-const graphWithConnections = createViaGraphWithConnections(baseGraph, [
+const graphWithConnections = createConvexViaGraphFromXYConnections([
   {
     connectionId: "A",
     start: { x: -2.5, y: 1.0 },
     end: { x: 2.5, y: -1.0 },
   },
-])
+], viaTile)
 
 const solver = new FixedViaHypergraphSolver({
   inputGraph: {
@@ -92,8 +86,8 @@ console.log(solver.solved)
 Export | Description
 --- | ---
 `FixedViaHypergraphSolver` | Main via-graph solver class
-`generateViaTopologyRegions` | Build via topology regions from a tile
 `generateConvexViaTopologyRegions` | Build convex via topology regions
+`createConvexViaGraphFromXYConnections` | Build convex via graph from XY connection input
 `createViaGraphWithConnections` | Attach XY connections to a base via graph
 Types from `lib/type.ts` | Shared package contracts
 

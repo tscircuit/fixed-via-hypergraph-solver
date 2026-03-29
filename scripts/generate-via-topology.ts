@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 import { getSvgFromGraphicsObject } from "graphics-debug"
 import { visualizeViaGraph } from "../lib/graph-utils/visualizeRegionPortGraph"
 import type { ViaTile } from "../lib/type"
-import { generateViaTopologyRegions } from "../lib/FixedViaHypergraphSolver/via-graph-generator/generateViaTopologyRegions"
+import { generateConvexViaTopologyRegions } from "../lib/FixedViaHypergraphSolver/via-graph-generator/generateConvexViaTopologyRegions"
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const DEFAULT_INPUT_PATH = path.join(
@@ -24,10 +24,48 @@ const DEFAULT_OUTPUT_PATH = path.join(
   "via-topology.svg",
 )
 
+function getBoundsFromViaTile(viaTile: ViaTile) {
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+
+  for (const vias of Object.values(viaTile.viasByNet)) {
+    for (const via of vias) {
+      const radius = via.diameter / 2
+      minX = Math.min(minX, via.position.x - radius)
+      maxX = Math.max(maxX, via.position.x + radius)
+      minY = Math.min(minY, via.position.y - radius)
+      maxY = Math.max(maxY, via.position.y + radius)
+    }
+  }
+
+  for (const route of viaTile.routeSegments) {
+    for (const point of route.segments) {
+      minX = Math.min(minX, point.x)
+      maxX = Math.max(maxX, point.x)
+      minY = Math.min(minY, point.y)
+      maxY = Math.max(maxY, point.y)
+    }
+  }
+
+  if (!Number.isFinite(minX)) {
+    return { minX: -2.5, maxX: 2.5, minY: -2.5, maxY: 2.5 }
+  }
+
+  const padding = 0.5
+  return {
+    minX: minX - padding,
+    maxX: maxX + padding,
+    minY: minY - padding,
+    maxY: maxY + padding,
+  }
+}
+
 function buildViaTopologySvg(viaTile: ViaTile): string {
-  const topology = generateViaTopologyRegions(viaTile, {
-    graphSize: 5,
-    idPrefix: "via",
+  const topology = generateConvexViaTopologyRegions({
+    viaTile,
+    bounds: getBoundsFromViaTile(viaTile),
   })
 
   // Assign a distinct color to each net
@@ -52,13 +90,14 @@ function buildViaTopologySvg(viaTile: ViaTile): string {
     regions: topology.regions,
   })
 
-  // Override polygon fills for per-net regions with distinct colors
-  const regionPrefix = topology.regions[0]?.regionId.split(":")[0]
-  if (regionPrefix && graphics.polygons) {
+  // Override polygon fills for per-net via regions with distinct colors
+  if (graphics.polygons) {
     for (let i = 0; i < topology.regions.length; i++) {
-      const regionId = topology.regions[i].regionId
-      const netName = regionId.replace(`${regionPrefix}:`, "")
-      if (netName in netColors) {
+      const region = topology.regions[i]
+      const netName = region.d.isViaRegion
+        ? region.regionId.split(":").at(-1)
+        : undefined
+      if (netName && netName in netColors) {
         graphics.polygons[i].fill = netColors[netName]
       }
     }
