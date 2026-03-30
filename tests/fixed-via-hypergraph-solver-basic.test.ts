@@ -1,11 +1,26 @@
 import { expect, test } from "bun:test"
-import {
-  FixedViaHypergraphSolver,
-  createConvexViaGraphFromXYConnections,
-} from "../lib"
-import type { ViaTile } from "../lib/type"
+import { FixedViaHypergraphSolver } from "../lib"
+import type { ViaTile, XYConnection } from "../lib/type"
 
-test("FixedViaHypergraphSolver: solves a basic 3-connection perimeter case", () => {
+const basicInputConnections: XYConnection[] = [
+  {
+    start: { x: -2.5, y: 1.0 },
+    end: { x: 2.5, y: -1.0 },
+    connectionId: "A",
+  },
+  {
+    start: { x: 0, y: 2.5 },
+    end: { x: -2.5, y: -1.0 },
+    connectionId: "B",
+  },
+  {
+    start: { x: 0, y: -2.5 },
+    end: { x: 2.5, y: 1.0 },
+    connectionId: "C",
+  },
+]
+
+test("FixedViaHypergraphSolver: explicit viaTile override in auto mode", () => {
   const viaTile: ViaTile = {
     viasByNet: {
       A: [{ viaId: "A1", diameter: 0.6, position: { x: -0.8, y: 0.8 } }],
@@ -39,38 +54,15 @@ test("FixedViaHypergraphSolver: solves a basic 3-connection perimeter case", () 
     tileHeight: 2.4,
   }
 
-  const graphWithConnections = createConvexViaGraphFromXYConnections(
-    [
-      {
-        start: { x: -2.5, y: 1.0 },
-        end: { x: 2.5, y: -1.0 },
-        connectionId: "A",
-      },
-      {
-        start: { x: 0, y: 2.5 },
-        end: { x: -2.5, y: -1.0 },
-        connectionId: "B",
-      },
-      {
-        start: { x: 0, y: -2.5 },
-        end: { x: 2.5, y: 1.0 },
-        connectionId: "C",
-      },
-    ],
-    viaTile,
-    {
-      tileWidth: viaTile.tileWidth,
-      tileHeight: viaTile.tileHeight,
-    },
-  )
-
   const solver = new FixedViaHypergraphSolver({
-    inputGraph: {
-      regions: graphWithConnections.regions,
-      ports: graphWithConnections.ports,
-    },
-    inputConnections: graphWithConnections.connections,
+    inputConnections: basicInputConnections,
     viaTile,
+    options: {
+      graph: {
+        tileWidth: viaTile.tileWidth,
+        tileHeight: viaTile.tileHeight,
+      },
+    },
   })
 
   solver.solve()
@@ -78,4 +70,23 @@ test("FixedViaHypergraphSolver: solves a basic 3-connection perimeter case", () 
   expect(solver.solved).toBe(true)
   expect(solver.failed).toBe(false)
   expect(solver.solvedRoutes.length).toBe(3)
+  const allVias = Object.values(solver.viaTile?.viasByNet ?? {}).flat()
+  expect(allVias.length).toBeGreaterThan(0)
+  expect(allVias.every((via) => Math.abs(via.diameter - 0.6) < 1e-6)).toBe(true)
+})
+
+test("FixedViaHypergraphSolver: auto-selects viaTile when none is provided", () => {
+  const solver = new FixedViaHypergraphSolver({
+    inputConnections: basicInputConnections,
+  })
+
+  solver.solve()
+
+  expect(solver.failed).toBe(false)
+  expect(solver.solved).toBe(true)
+  expect(solver.solvedRoutes.length).toBe(3)
+  expect(solver.viaTile).toBeDefined()
+  expect(
+    Object.values(solver.viaTile?.viasByNet ?? {}).flat().length,
+  ).toBeGreaterThan(0)
 })

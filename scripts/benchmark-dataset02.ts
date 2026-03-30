@@ -45,7 +45,7 @@ const rawConcurrency =
 
 if (HELP) {
   console.log(`
-Usage: bun scripts/benchmark-dataset02-convex.ts [options] [via-json-file]
+Usage: bun scripts/benchmark-dataset02.ts [options] [via-json-file]
 
 Options:
   --limit=N           Only run first N samples (default: all)
@@ -60,11 +60,11 @@ Aliases:
   --parallel=N        Alias for --concurrency=N
 
 Examples:
-  bun scripts/benchmark-dataset02-convex.ts --limit=100
-  bun scripts/benchmark-dataset02-convex.ts --dataset-path=./lib/datasets/dataset02.json --limit=10
-  bun scripts/benchmark-dataset02-convex.ts --concurrency=4 --quick
-  bun scripts/benchmark-dataset02-convex.ts --limit=200 --concurrency=8
-  bun scripts/benchmark-dataset02-convex.ts --quick assets/FixedViaHypergraphSolver/via-tile-4-regions-baked.json
+  bun scripts/benchmark-dataset02.ts --limit=100
+  bun scripts/benchmark-dataset02.ts --dataset-path=./lib/datasets/dataset02.json --limit=10
+  bun scripts/benchmark-dataset02.ts --concurrency=4 --quick
+  bun scripts/benchmark-dataset02.ts --limit=200 --concurrency=8
+  bun scripts/benchmark-dataset02.ts --quick assets/FixedViaHypergraphSolver/via-tile-4-regions-baked.json
 `)
   process.exit(0)
 }
@@ -190,12 +190,38 @@ function extractXYConnections(sample) {
   })
 }
 
+function getTileCountFromViaTile(viaTile) {
+  if (!viaTile || !viaTile.viasByNet) {
+    return { rows: 0, cols: 0 }
+  }
+
+  let maxRow = -1
+  let maxCol = -1
+  const prefixRe = /^t(\\d+)_(\\d+):/
+
+  for (const vias of Object.values(viaTile.viasByNet)) {
+    for (const via of vias) {
+      if (!via || typeof via.viaId !== "string") continue
+      const match = via.viaId.match(prefixRe)
+      if (!match) continue
+      const row = Number.parseInt(match[1], 10)
+      const col = Number.parseInt(match[2], 10)
+      if (Number.isFinite(row) && row > maxRow) maxRow = row
+      if (Number.isFinite(col) && col > maxCol) maxCol = col
+    }
+  }
+
+  return {
+    rows: maxRow >= 0 ? maxRow + 1 : 0,
+    cols: maxCol >= 0 ? maxCol + 1 : 0,
+  }
+}
+
 async function solveSample(sampleIndex, sample) {
   try {
     const mod = await loadApi()
     const {
       FixedViaHypergraphSolver,
-      createConvexViaGraphFromXYConnections,
       recommendViaTileFromGraphInput,
     } = mod
 
@@ -208,32 +234,33 @@ async function solveSample(sampleIndex, sample) {
       : recommendViaTileFromGraphInput(problemInput, xyConnections)
           .recommendedViaRegionName
 
-    const result = viaTile
-      ? createConvexViaGraphFromXYConnections(xyConnections, viaTile)
-      : createConvexViaGraphFromXYConnections(xyConnections, problemInput)
-
-    const convexRegions = result.regions.filter(
-      (r) => typeof r.regionId === "string" && r.regionId.includes(":convex:"),
-    ).length
-    const viaRegions = result.regions.filter((r) => r.d && r.d.isViaRegion).length
-
-    const solverOpts = {
-      inputGraph: {
-        regions: result.regions,
-        ports: result.ports,
-      },
-      inputConnections: result.connections,
-      viaTile: result.viaTile,
-    }
-
-    if (quickMode) {
-      solverOpts.baseMaxIterations = 50000
-    }
+    const solverOpts = quickMode
+      ? {
+          inputConnections: xyConnections,
+          viaTile,
+          options: {
+            solver: {
+              baseMaxIterations: 50000,
+            },
+          },
+        }
+      : {
+          inputConnections: xyConnections,
+          viaTile,
+        }
 
     const solver = new FixedViaHypergraphSolver(solverOpts)
     const startTime = performance.now()
     solver.solve()
     const duration = performance.now() - startTime
+
+    const convexRegions = solver.graph.regions.filter(
+      (r) => typeof r.regionId === "string" && r.regionId.includes(":convex:"),
+    ).length
+    const viaRegions = solver.graph.regions.filter(
+      (r) => r.d && r.d.isViaRegion,
+    ).length
+    const tileCount = getTileCountFromViaTile(solver.viaTile)
 
     return {
       sampleIndex,
@@ -247,8 +274,8 @@ async function solveSample(sampleIndex, sample) {
       failed: solver.failed,
       iterations: solver.iterations,
       duration,
-      tileRows: result.tileCount.rows,
-      tileCols: result.tileCount.cols,
+      tileRows: tileCount.rows,
+      tileCols: tileCount.cols,
       convexRegions,
       viaRegions,
     }

@@ -35,10 +35,26 @@ bun add git+https://github.com/tscircuit/fixed-via-hypergraph-solver.git#1c48988
 ```ts
 import {
   FixedViaHypergraphSolver,
-  createConvexViaGraphFromXYConnections,
   type ViaTile,
 } from "@tscircuit/fixed-via-hypergraph-solver"
 
+const solver = new FixedViaHypergraphSolver({
+  inputConnections: [
+    {
+      connectionId: "A",
+      start: { x: -2.5, y: 1.0 },
+      end: { x: 2.5, y: -1.0 },
+    },
+  ],
+})
+
+solver.solve()
+console.log(solver.solved)
+```
+
+Optional deterministic override with `viaTile`:
+
+```ts
 const viaTile: ViaTile = {
   viasByNet: {
     A: [{ viaId: "A1", diameter: 0.6, position: { x: -0.8, y: 0.8 } }],
@@ -60,25 +76,47 @@ const viaTile: ViaTile = {
   tileHeight: 2.4,
 }
 
-const graphWithConnections = createConvexViaGraphFromXYConnections([
-  {
-    connectionId: "A",
-    start: { x: -2.5, y: 1.0 },
-    end: { x: 2.5, y: -1.0 },
-  },
-], viaTile)
-
 const solver = new FixedViaHypergraphSolver({
-  inputGraph: {
-    regions: graphWithConnections.regions,
-    ports: graphWithConnections.ports,
-  },
-  inputConnections: graphWithConnections.connections,
+  inputConnections: [
+    {
+      connectionId: "A",
+      start: { x: -2.5, y: 1.0 },
+      end: { x: 2.5, y: -1.0 },
+    },
+  ],
   viaTile,
 })
+```
 
-solver.solve()
-console.log(solver.solved)
+Advanced tuning with nested `options`:
+
+```ts
+const solver = new FixedViaHypergraphSolver({
+  inputConnections: [
+    {
+      connectionId: "A",
+      start: { x: -2.5, y: 1.0 },
+      end: { x: 2.5, y: -1.0 },
+    },
+  ],
+  viaTile,
+  options: {
+    graph: {
+      tileWidth: 2.4,
+      tileHeight: 2.4,
+      portPitch: 0.4,
+      clearance: 0.1,
+      concavityTolerance: 0,
+    },
+    solver: {
+      baseMaxIterations: 900000,
+      additionalMaxIterationsPerConnection: 2000,
+      ripCost: 35.38577539020022,
+      portUsagePenalty: 0.034685181009478865,
+      crossingPenalty: 4.072520483177124,
+    },
+  },
+})
 ```
 
 ## API Surface
@@ -86,8 +124,11 @@ console.log(solver.solved)
 Export | Description
 --- | ---
 `FixedViaHypergraphSolver` | Main via-graph solver class
+`new FixedViaHypergraphSolver({ inputConnections, viaTile? })` | Preferred minimal one-call convex graph + solver entrypoint
+`options.graph` / `options.solver` | Advanced graph-generation and solver tuning for auto-convex mode
+`new FixedViaHypergraphSolver({ inputGraph, inputConnections, ... })` | Low-level direct graph mode (compatibility path)
 `generateConvexViaTopologyRegions` | Build convex via topology regions
-`createConvexViaGraphFromXYConnections` | Build convex via graph from XY connection input
+`createConvexViaGraphFromXYConnections` | Low-level convex graph builder (kept for advanced usage)
 `createViaGraphWithConnections` | Attach XY connections to a base via graph
 Types from `lib/type.ts` | Shared package contracts
 

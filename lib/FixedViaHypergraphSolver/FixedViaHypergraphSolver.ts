@@ -13,7 +13,9 @@ import type {
   ViaByNet,
   ViaData,
   ViaTile,
+  XYConnection,
 } from "../type"
+import { createConvexViaGraphFromXYConnections } from "./via-graph-generator/createConvexViaGraphFromXYConnections"
 import {
   computeCrossingAssignmentsForPolygon,
   computeDifferentNetCrossingsForPolygon,
@@ -36,6 +38,74 @@ export const VIA_GRAPH_SOLVER_DEFAULTS = {
   greedyMultiplier: 0.5518001238069296,
 }
 
+export type FixedViaHypergraphSolverSolverOptions = {
+  inputSolvedRoutes?: SolvedRoute[]
+  ripCost?: number
+  portUsagePenalty?: number
+  crossingPenalty?: number
+  baseMaxIterations?: number
+  additionalMaxIterationsPerConnection?: number
+}
+
+export type FixedViaHypergraphSolverAutoOptions = {
+  graph?: Parameters<typeof createConvexViaGraphFromXYConnections>[2]
+  solver?: FixedViaHypergraphSolverSolverOptions
+}
+
+export type FixedViaHypergraphSolverDirectInput = {
+  inputGraph: HyperGraph | SerializedHyperGraph
+  inputConnections: (Connection | SerializedConnection)[]
+  inputSolvedRoutes?: SolvedRoute[]
+  viaTile?: ViaTile
+  options?: never
+  ripCost?: number
+  portUsagePenalty?: number
+  crossingPenalty?: number
+  baseMaxIterations?: number
+  additionalMaxIterationsPerConnection?: number
+}
+
+export type FixedViaHypergraphSolverAutoInput = {
+  inputGraph?: never
+  inputConnections: XYConnection[]
+  viaTile?: ViaTile
+  options?: FixedViaHypergraphSolverAutoOptions
+}
+
+export type FixedViaHypergraphSolverInput =
+  | FixedViaHypergraphSolverDirectInput
+  | FixedViaHypergraphSolverAutoInput
+
+const normalizeFixedViaSolverInput = (
+  input: FixedViaHypergraphSolverInput,
+): FixedViaHypergraphSolverDirectInput => {
+  if (input.inputGraph !== undefined) {
+    return input
+  }
+
+  const graphResult = createConvexViaGraphFromXYConnections(
+    input.inputConnections,
+    input.viaTile,
+    input.options?.graph,
+  )
+
+  return {
+    inputGraph: {
+      regions: graphResult.regions,
+      ports: graphResult.ports,
+    },
+    inputConnections: graphResult.connections,
+    viaTile: graphResult.viaTile,
+    inputSolvedRoutes: input.options?.solver?.inputSolvedRoutes,
+    ripCost: input.options?.solver?.ripCost,
+    portUsagePenalty: input.options?.solver?.portUsagePenalty,
+    crossingPenalty: input.options?.solver?.crossingPenalty,
+    baseMaxIterations: input.options?.solver?.baseMaxIterations,
+    additionalMaxIterationsPerConnection:
+      input.options?.solver?.additionalMaxIterationsPerConnection,
+  }
+}
+
 export class FixedViaHypergraphSolver extends HyperGraphSolver<JRegion, JPort> {
   override getSolverName(): string {
     return "FixedViaHypergraphSolver"
@@ -54,39 +124,34 @@ export class FixedViaHypergraphSolver extends HyperGraphSolver<JRegion, JPort> {
   additionalMaxIterationsPerConnection = 2000
   additionalMaxIterationsPerCrossing = 2000
 
-  constructor(input: {
-    inputGraph: HyperGraph | SerializedHyperGraph
-    inputConnections: (Connection | SerializedConnection)[]
-    inputSolvedRoutes?: SolvedRoute[]
-    viaTile?: ViaTile
-    ripCost?: number
-    portUsagePenalty?: number
-    crossingPenalty?: number
-    baseMaxIterations?: number
-    additionalMaxIterationsPerConnection?: number
-  }) {
+  constructor(input: FixedViaHypergraphSolverInput) {
+    const normalizedInput = normalizeFixedViaSolverInput(input)
+
     super({
       greedyMultiplier: VIA_GRAPH_SOLVER_DEFAULTS.greedyMultiplier,
       rippingEnabled: true,
-      ...input,
+      ...normalizedInput,
     })
-    this.viaTile = input.viaTile
-    this.ripCost = input.ripCost ?? this.ripCost
-    this.portUsagePenalty = input.portUsagePenalty ?? this.portUsagePenalty
-    this.crossingPenalty = input.crossingPenalty ?? this.crossingPenalty
-    this.baseMaxIterations = input.baseMaxIterations ?? this.baseMaxIterations
+    this.viaTile = normalizedInput.viaTile
+    this.ripCost = normalizedInput.ripCost ?? this.ripCost
+    this.portUsagePenalty =
+      normalizedInput.portUsagePenalty ?? this.portUsagePenalty
+    this.crossingPenalty =
+      normalizedInput.crossingPenalty ?? this.crossingPenalty
+    this.baseMaxIterations =
+      normalizedInput.baseMaxIterations ?? this.baseMaxIterations
     this.additionalMaxIterationsPerConnection =
-      input.additionalMaxIterationsPerConnection ??
+      normalizedInput.additionalMaxIterationsPerConnection ??
       this.additionalMaxIterationsPerConnection
 
     const crossings = countInputConnectionCrossings(
       this.graph,
-      input.inputConnections,
+      normalizedInput.inputConnections,
     )
 
     this.MAX_ITERATIONS =
       this.baseMaxIterations +
-      input.inputConnections.length *
+      normalizedInput.inputConnections.length *
         this.additionalMaxIterationsPerConnection +
       crossings * this.additionalMaxIterationsPerCrossing
 
